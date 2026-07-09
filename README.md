@@ -1,12 +1,15 @@
 # Slide Builder
 
-AI voice presentation MVP. The current implementation is backend-only: a Python LiveKit Agent generates, presents, edits, and navigates structured slide decks.
+AI voice presentation MVP. A Python LiveKit Agent generates, presents, edits, and navigates structured slide decks while a Next.js frontend renders the deck with Reveal.js.
 
 ## Current Scope
 
-This repo currently contains the backend agent only. The React/Reveal.js frontend will be added later.
+This repo contains:
 
-The backend supports:
+- `agent/`: Python LiveKit Agent backend.
+- `web/`: Next.js frontend with LiveKit browser session controls and embedded Reveal.js slides.
+
+The app supports:
 
 - AI-generated 5-6 slide presentations.
 - Conversational voice presentation through LiveKit Agents.
@@ -15,43 +18,32 @@ The backend supports:
 - Slide add/update/delete/regenerate tools.
 - Backend-owned presentation state.
 - Reveal-compatible Markdown generated from structured slide data.
-- Event logging to `backend/logs/events.jsonl` for frontend-less verification.
-- LiveKit data-channel events for the future frontend.
+- Colorful slide themes, gradient backgrounds, and PDF export styling.
+- Event logging to `agent/logs/events.jsonl`.
+- LiveKit data-channel events consumed by the frontend.
+
+Generated decks do not depend on external image APIs. Slides are text-first with visual styling driven by structured metadata such as `layout`, `accent`, and `kicker`.
 
 ## Architecture
 
 ```text
-Python LiveKit Agent
-│
-├── agent.py
-│   ├── AgentSession
-│   ├── LiveKit Inference STT / LLM / TTS
-│   └── Supervisor tool registration
-│
-├── tools/
-│   ├── presentation.py
-│   ├── navigation.py
-│   └── context.py
-│
-├── presentation/
-│   ├── models.py
-│   ├── service.py
-│   ├── markdown.py
-│   └── context.py
-│
-├── services/
-│   └── llm.py
-│
-└── core/
-    ├── config.py
-    ├── events.py
-    ├── event_log.py
-    └── publisher.py
+slide-builder/
+├── agent/
+│   ├── agent.py
+│   ├── core/
+│   ├── presentation/
+│   ├── services/
+│   └── tools/
+└── web/
+    ├── src/app/
+    ├── src/components/
+    ├── src/hooks/
+    └── src/services/
 ```
 
-The LiveKit Agent is the single orchestrator. It supervises tools and services, but business logic stays outside `agent.py`.
+The LiveKit Agent is the single presentation orchestrator. It owns state, generation, navigation, and edits. The frontend connects to the same room, captures microphone input, plays agent audio, and renders presentation events.
 
-Dependency direction:
+Agent dependency direction:
 
 ```text
 agent.py
@@ -80,14 +72,31 @@ Slide
 ├── index
 ├── title
 ├── bullets
-└── speaker_notes
+├── speaker_notes
+├── kicker
+├── layout
+├── accent
+├── image_url
+└── image_alt
 ```
 
-Markdown is derived output. Do not treat Markdown as the source of truth.
+Markdown is derived output. Do not treat Markdown as the source of truth. Image fields are currently preserved for schema compatibility but ignored by generation and rendering.
+
+## Frontend Rendering
+
+The frontend renders backend Markdown with `@revealjs/react`. Generated slides include Reveal-compatible HTML and `.slide` attributes for:
+
+- Gradient backgrounds.
+- Large display typography.
+- Accent color themes.
+- Plain, high-contrast bullet lists.
+- PDF export using the same slide HTML/CSS.
+
+The startup slide is a local placeholder in `web/src/components/Presentation.tsx`.
 
 ## Events
 
-All outbound presentation events are published through LiveKit data channels and mirrored to `backend/logs/events.jsonl`.
+All outbound presentation events are published through LiveKit data channels and mirrored to `agent/logs/events.jsonl`.
 
 Current event shapes:
 
@@ -99,7 +108,7 @@ Current event shapes:
 
 The future frontend will listen on the LiveKit data topic configured by `LIVEKIT_PRESENTATION_TOPIC`.
 
-## Backend Setup
+## Agent Setup
 
 Requirements:
 
@@ -111,12 +120,12 @@ Requirements:
 Install dependencies:
 
 ```bash
-cd backend
+cd agent
 uv sync
 cp .env.example .env
 ```
 
-Configure `backend/.env`:
+Configure `agent/.env`:
 
 ```env
 LIVEKIT_URL=wss://your-project.livekit.cloud
@@ -134,27 +143,27 @@ EVENT_LOG_PATH=logs/events.jsonl
 
 No provider API keys are required by the default setup. Model access uses LiveKit Inference.
 
-## Run Backend
+## Run Agent
 
 ```bash
-cd backend
+cd agent
 uv run agent.py [ dev | console | start ]
 ```
 
-While the frontend is not built, inspect backend events in:
+Inspect emitted presentation events in:
 
 ```text
-backend/logs/events.jsonl
+agent/logs/events.jsonl
 ```
 
-## Frontend Later
+## Web Setup
 
-The frontend should remain a rendering layer:
+```bash
+cd web
+cp .env.example .env.local
+pnpm install
+pnpm dev
+```
 
-- Connect to LiveKit.
-- Capture microphone input.
-- Play agent audio.
-- Render Reveal Markdown.
-- Listen for `presentation_loaded`, `presentation_updated`, and `goto_slide`.
+Open [http://localhost:3000](http://localhost:3000).
 
-It should not generate slides, decide presentation flow, perform retrieval, or own presentation state.

@@ -2,7 +2,7 @@
 __pycache__/
 .pytest_cache/
 
-backend/.venv/
-backend/logs/
-backend/*.egg-info/
+agent/.venv/
+agent/logs/*
+agent/*.egg-info/
 .env

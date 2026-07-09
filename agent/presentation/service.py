@@ -43,6 +43,7 @@ class PresentationService:
             insert_at,
             Slide(index=insert_at, title=title, bullets=bullets, speaker_notes=speaker_notes),
         )
+        self.presentation.current_slide = insert_at
         self.presentation.reindex()
         return self._refresh()
 

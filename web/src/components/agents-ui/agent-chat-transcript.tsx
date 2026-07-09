@@ -53,7 +53,7 @@ export function AgentChatTranscript({
 }: AgentChatTranscriptProps) {
   return (
     <Conversation className={className} {...props}>
-      <ConversationContent>
+      <ConversationContent className="pb-10">
         {messages.map((receivedMessage) => {
           const { id, timestamp, from, message } = receivedMessage;
           const time = new Date(timestamp);

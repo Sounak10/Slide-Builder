@@ -49,7 +49,7 @@ class PresentationAgent(Agent):
 
     @function_tool()
     async def generate_presentation(self, topic: str) -> str:
-        """Generate a new AI-created 5-6 slide presentation for a topic."""
+        """Generate a new AI-created 5-6 slide presentation for a topic. After this returns, speak about slide 0 before any navigation."""
         return await self._with_generation_audio(
             self.presentation_tools.generate_presentation(topic)
         )
@@ -102,17 +102,17 @@ class PresentationAgent(Agent):
 
     @function_tool()
     async def goto_slide(self, index: int) -> str:
-        """Navigate to a slide by zero-based index."""
+        """Navigate to a slide by zero-based index immediately before discussing that slide. Do not use for future slides in the same spoken turn."""
         return await self.navigation_tools.goto_slide(index)
 
     @function_tool()
     async def next_slide(self) -> str:
-        """Navigate to the next slide."""
+        """Navigate to the next slide only when the user asks to continue or at the start of a later turn. Never call while still speaking about the current slide."""
         return await self.navigation_tools.next_slide()
 
     @function_tool()
     async def previous_slide(self) -> str:
-        """Navigate to the previous slide."""
+        """Navigate to the previous slide immediately before discussing that slide."""
         return await self.navigation_tools.previous_slide()
 
     @function_tool()

@@ -23,12 +23,22 @@ class PresentationTools:
         slides = await self.generator.generate_presentation(topic)
         presentation = self.service.create_presentation(topic, slides)
         await self.publisher.publish(PresentationEvent.loaded(presentation.markdown))
-        return f"Created {len(presentation.slides)} slides for '{presentation.topic}'. Current slide is 0."
+        first_slide = presentation.slides[presentation.current_slide]
+        return (
+            f"Created {len(presentation.slides)} slides for '{presentation.topic}'. "
+            f"The deck is loaded on slide 0: {first_slide.title}. "
+            "Next, speak about slide 0. Do not call next_slide or goto_slide for a future slide yet."
+        )
 
     async def create_presentation(self, topic: str, slides: list[dict[str, Any]]) -> str:
         presentation = self.service.create_presentation(topic, slides)
         await self.publisher.publish(PresentationEvent.loaded(presentation.markdown))
-        return f"Loaded {len(presentation.slides)} slides for '{presentation.topic}'. Current slide is 0."
+        first_slide = presentation.slides[presentation.current_slide]
+        return (
+            f"Loaded {len(presentation.slides)} slides for '{presentation.topic}'. "
+            f"The deck is loaded on slide 0: {first_slide.title}. "
+            "Next, speak about slide 0. Do not call next_slide or goto_slide for a future slide yet."
+        )
 
     async def generate_and_add_slide(self, instruction: str, index: int | None = None) -> str:
         slide = await self.generator.generate_slide(instruction)
@@ -57,7 +67,12 @@ class PresentationTools:
     ) -> str:
         presentation = self.service.add_slide(title, bullets, speaker_notes, index)
         await self.publisher.publish(PresentationEvent.updated(presentation.markdown))
-        return f"Added slide. The deck now has {len(presentation.slides)} slides."
+        await self.publisher.publish(PresentationEvent.goto_slide(presentation.current_slide))
+        added_slide = presentation.slides[presentation.current_slide]
+        return (
+            f"Added slide {added_slide.index}: {added_slide.title}. "
+            f"The deck now has {len(presentation.slides)} slides and is showing the new slide."
+        )
 
     async def update_slide(
         self,

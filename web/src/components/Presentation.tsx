@@ -10,9 +10,9 @@ type PresentationProps = {
 };
 
 const emptyDeck = `
-# Your AI presentation will appear here
+# Your voice-built deck lands here
 
-Connect your microphone and ask the agent for any topic.
+Start a voice session, name the topic, and refine the story out loud.
 `;
 
 export function Presentation({ markdown, currentSlide }: PresentationProps) {
@@ -34,6 +34,9 @@ export function Presentation({ markdown, currentSlide }: PresentationProps) {
           controls: false,
           progress: true,
           center: true,
+          width: 1280,
+          height: 720,
+          margin: 0.02,
           transition: "slide",
         }}
       >

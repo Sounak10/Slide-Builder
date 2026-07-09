@@ -46,6 +46,11 @@ class PresentationTools:
             title=str(slide.get("title", "")),
             bullets=slide.get("bullets", []),
             speaker_notes=str(slide.get("speaker_notes", "")),
+            kicker=str(slide.get("kicker", "")),
+            layout=str(slide.get("layout", "standard")),
+            accent=str(slide.get("accent", "cyan")),
+            image_url=str(slide.get("image_url", "")),
+            image_alt=str(slide.get("image_alt", "")),
             index=index,
         )
 
@@ -56,6 +61,11 @@ class PresentationTools:
             title=str(slide.get("title", "")),
             bullets=slide.get("bullets", []),
             speaker_notes=str(slide.get("speaker_notes", "")),
+            kicker=str(slide.get("kicker", "")),
+            layout=str(slide.get("layout", "standard")),
+            accent=str(slide.get("accent", "cyan")),
+            image_url=str(slide.get("image_url", "")),
+            image_alt=str(slide.get("image_alt", "")),
         )
 
     async def add_slide(
@@ -64,8 +74,23 @@ class PresentationTools:
         bullets: list[str],
         speaker_notes: str,
         index: int | None = None,
+        kicker: str = "",
+        layout: str = "standard",
+        accent: str = "cyan",
+        image_url: str = "",
+        image_alt: str = "",
     ) -> str:
-        presentation = self.service.add_slide(title, bullets, speaker_notes, index)
+        presentation = self.service.add_slide(
+            title=title,
+            bullets=bullets,
+            speaker_notes=speaker_notes,
+            index=index,
+            kicker=kicker,
+            layout=layout,
+            accent=accent,
+            image_url=image_url,
+            image_alt=image_alt,
+        )
         await self.publisher.publish(PresentationEvent.updated(presentation.markdown))
         await self.publisher.publish(PresentationEvent.goto_slide(presentation.current_slide))
         added_slide = presentation.slides[presentation.current_slide]
@@ -85,8 +110,29 @@ class PresentationTools:
         await self.publisher.publish(PresentationEvent.updated(presentation.markdown))
         return f"Updated slide {index}: {presentation.slides[index].title}."
 
-    async def replace_slide(self, index: int, title: str, bullets: list[str], speaker_notes: str) -> str:
-        presentation = self.service.replace_slide(index, title, bullets, speaker_notes)
+    async def replace_slide(
+        self,
+        index: int,
+        title: str,
+        bullets: list[str],
+        speaker_notes: str,
+        kicker: str = "",
+        layout: str = "standard",
+        accent: str = "cyan",
+        image_url: str = "",
+        image_alt: str = "",
+    ) -> str:
+        presentation = self.service.replace_slide(
+            index=index,
+            title=title,
+            bullets=bullets,
+            speaker_notes=speaker_notes,
+            kicker=kicker,
+            layout=layout,
+            accent=accent,
+            image_url=image_url,
+            image_alt=image_alt,
+        )
         await self.publisher.publish(PresentationEvent.updated(presentation.markdown))
         return f"Replaced slide {index}: {presentation.slides[index].title}."
 

@@ -74,6 +74,32 @@ function splitRevealMarkdown(markdown: string) {
   return slides.length > 0 ? slides : [markdown];
 }
 
+function stripRevealSlideAttributes(slide: string) {
+  return slide.replace(/^\s*<!--\s*\.slide:[\s\S]*?-->\s*/u, "").trim();
+}
+
+function isStyledHtmlSlide(slide: string) {
+  return stripRevealSlideAttributes(slide).includes('class="slide-shell');
+}
+
+async function waitForSlideAssets() {
+  await document.fonts?.ready;
+
+  const images = Array.from(document.images);
+  await Promise.all(
+    images.map((image) => {
+      if (image.complete) {
+        return Promise.resolve();
+      }
+
+      return new Promise<void>((resolve) => {
+        image.addEventListener("load", () => resolve(), { once: true });
+        image.addEventListener("error", () => resolve(), { once: true });
+      });
+    }),
+  );
+}
+
 export function SlidePrintExport({ exportId }: SlidePrintExportProps) {
   const [exportState, setExportState] = useState<ExportState>({ status: "loading" });
   const hasPrintedRef = useRef(false);
@@ -117,12 +143,13 @@ export function SlidePrintExport({ exportId }: SlidePrintExportProps) {
     };
   }, [exportId]);
 
-  const printOnce = useCallback(() => {
+  const printOnce = useCallback(async () => {
     if (hasPrintedRef.current) {
       return;
     }
 
     hasPrintedRef.current = true;
+    await waitForSlideAssets();
     window.print();
   }, []);
 
@@ -170,12 +197,19 @@ export function SlidePrintExport({ exportId }: SlidePrintExportProps) {
     <main className="slide-print-export min-h-screen bg-white text-slate-950">
       {slides.map((slide, index) => (
         <article className="slide-print-export-page" key={`${index}-${slide.slice(0, 24)}`}>
-          <Streamdown
-            className="slide-print-export-content"
-            plugins={streamdownPlugins}
-          >
-            {slide}
-          </Streamdown>
+          {isStyledHtmlSlide(slide) ? (
+            <div
+              className="slide-print-export-content"
+              dangerouslySetInnerHTML={{ __html: stripRevealSlideAttributes(slide) }}
+            />
+          ) : (
+            <Streamdown
+              className="slide-print-export-content"
+              plugins={streamdownPlugins}
+            >
+              {slide}
+            </Streamdown>
+          )}
         </article>
       ))}
     </main>

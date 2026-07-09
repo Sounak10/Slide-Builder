@@ -37,11 +37,26 @@ class PresentationService:
         bullets: list[str],
         speaker_notes: str,
         index: int | None = None,
+        kicker: str = "",
+        layout: str = "standard",
+        accent: str = "cyan",
+        image_url: str = "",
+        image_alt: str = "",
     ) -> Presentation:
         insert_at = len(self.presentation.slides) if index is None else self._insert_index(index)
         self.presentation.slides.insert(
             insert_at,
-            Slide(index=insert_at, title=title, bullets=bullets, speaker_notes=speaker_notes),
+            Slide(
+                index=insert_at,
+                title=title,
+                bullets=bullets,
+                speaker_notes=speaker_notes,
+                kicker=kicker,
+                layout=layout,
+                accent=accent,
+                image_url=image_url,
+                image_alt=image_alt,
+            ),
         )
         self.presentation.current_slide = insert_at
         self.presentation.reindex()
@@ -69,6 +84,11 @@ class PresentationService:
         title: str,
         bullets: list[str],
         speaker_notes: str,
+        kicker: str = "",
+        layout: str = "standard",
+        accent: str = "cyan",
+        image_url: str = "",
+        image_alt: str = "",
     ) -> Presentation:
         self._slide(index)
         self.presentation.slides[index] = Slide(
@@ -76,6 +96,11 @@ class PresentationService:
             title=title,
             bullets=bullets,
             speaker_notes=speaker_notes,
+            kicker=kicker,
+            layout=layout,
+            accent=accent,
+            image_url=image_url,
+            image_alt=image_alt,
         )
         return self._refresh()
 
@@ -120,6 +145,11 @@ class PresentationService:
             title=self._required_text(str(slide.get("title", "")), "slide title"),
             bullets=self._string_list(slide.get("bullets", [])),
             speaker_notes=str(slide.get("speaker_notes", "")).strip(),
+            kicker=str(slide.get("kicker", "")).strip(),
+            layout=str(slide.get("layout", "standard")).strip(),
+            accent=str(slide.get("accent", "cyan")).strip(),
+            image_url=str(slide.get("image_url", "")).strip(),
+            image_alt=str(slide.get("image_alt", "")).strip(),
         )
 
     def _string_list(self, value: Any) -> list[str]:

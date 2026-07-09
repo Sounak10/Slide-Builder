@@ -6,7 +6,10 @@ from presentation.models import Presentation, Slide
 def slide_context(slide: Slide) -> str:
     bullets = "\n".join(f"- {bullet}" for bullet in slide.bullets) or "- No bullets"
     notes = slide.speaker_notes or "No speaker notes"
-    return f"Slide {slide.index}: {slide.title}\nBullets:\n{bullets}\nSpeaker notes: {notes}"
+    visual = f"Visual: {slide.layout} layout, {slide.accent} accent"
+    if slide.image_url:
+        visual = f"{visual}, image: {slide.image_alt or slide.image_url}"
+    return f"Slide {slide.index}: {slide.title}\n{visual}\nBullets:\n{bullets}\nSpeaker notes: {notes}"
 
 
 def presentation_context(presentation: Presentation) -> str:

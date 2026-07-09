@@ -23,16 +23,23 @@ class SlideGenerator(ABC):
 
 
 class LiveKitSlideGenerator(SlideGenerator):
+    accents = ("cyan", "violet", "amber", "emerald", "rose", "indigo")
+    layouts = ("standard", "hero")
+
     def __init__(self, llm: LLM) -> None:
         self.llm = llm
 
     async def generate_presentation(self, topic: str) -> list[dict[str, Any]]:
         response_text = await self._complete_json(
             system_prompt=(
-                "Generate a specific, conversational 5-6 slide presentation. "
+                "Generate a specific, conversational 5-6 slide presentation with strong visual direction. "
                 "Return JSON only with this shape: "
-                '{"slides":[{"title":"...","bullets":["..."],"speaker_notes":"..."}]}. '
-                "Each slide needs 3-5 concise bullets and speaker notes suitable for spoken delivery."
+                '{"slides":[{"title":"...","kicker":"...","bullets":["..."],'
+                '"speaker_notes":"...","layout":"standard|hero",'
+                '"accent":"cyan|violet|amber|emerald|rose|indigo"}]}. '
+                "Each slide needs 3-5 concise bullets and speaker notes suitable for spoken delivery. "
+                "Vary accents across the deck. Use hero layout for section-opening or summary slides "
+                "and standard layout for detail slides. Do not include external images or image URLs."
             ),
             user_prompt=f"Topic: {topic}",
         )
@@ -41,9 +48,11 @@ class LiveKitSlideGenerator(SlideGenerator):
     async def generate_slide(self, instruction: str) -> dict[str, Any]:
         response_text = await self._complete_json(
             system_prompt=(
-                "Generate one presentation slide. Return JSON only with this shape: "
-                '{"title":"...","bullets":["..."],"speaker_notes":"..."}. '
-                "Use 3-5 concise bullets and conversational speaker notes."
+                "Generate one visually rich presentation slide. Return JSON only with this shape: "
+                '{"title":"...","kicker":"...","bullets":["..."],"speaker_notes":"...",'
+                '"layout":"standard|hero","accent":"cyan|violet|amber|emerald|rose|indigo"}. '
+                "Use 3-5 concise bullets and conversational speaker notes. Do not include external "
+                "images or image URLs."
             ),
             user_prompt=instruction,
         )
@@ -82,7 +91,19 @@ class LiveKitSlideGenerator(SlideGenerator):
             raise SlideGenerationError("slide response must be a JSON object")
 
         return {
-            "title": str(slide.get("title", "")).strip(),
+            "title": self._clean_text(slide.get("title", "")),
             "bullets": slide.get("bullets", []),
-            "speaker_notes": str(slide.get("speaker_notes", "")).strip(),
+            "speaker_notes": self._clean_text(slide.get("speaker_notes", "")),
+            "kicker": self._clean_text(slide.get("kicker", "")),
+            "layout": self._choice(slide.get("layout", "standard"), self.layouts, "standard"),
+            "accent": self._choice(slide.get("accent", "cyan"), self.accents, "cyan"),
+            "image_url": "",
+            "image_alt": "",
         }
+
+    def _clean_text(self, value: Any) -> str:
+        return str(value).strip()
+
+    def _choice(self, value: Any, allowed: tuple[str, ...], fallback: str) -> str:
+        clean = self._clean_text(value).lower()
+        return clean if clean in allowed else fallback
